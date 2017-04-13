@@ -77,26 +77,28 @@ int main_video_file_check_func(int argc, char *argv[])
 
 	//get all filenames in folder
 	//check for new filenames
-	auto numOfCams = (argc >= 4) ? std::stoi(argv[3]) : DEFAULT_NUM_OF_CAMS;
+
+	auto camFolders = get_all_folder_names_in_folder(folderName);
+	auto numOfCams = max(static_cast<int>(camFolders.size()), (argc >= 4) ? std::stoi(argv[3]) : DEFAULT_NUM_OF_CAMS);
 	//VideoFiles.FileNameHash.reserve(numOfCams);
 
 	if (!VideoFiles.FileNameHash.size()){
 		log_error("initial vector reserve");
 		VideoFiles.FileNameHash = TVideoFileNames::HASH_TYPE{ 5, {} };
 	}
-	else if (numOfCams > (int)VideoFiles.FileNameHash.size()){
+	else if (numOfCams > static_cast<int>(VideoFiles.FileNameHash.size())){
 		log_error("vector resize");
 		VideoFiles.FileNameHash.resize(numOfCams);
 	}	
 
-	for (auto i = 1; i <= numOfCams; ++i){
-		auto folderNameForCam = folderName + "\\" + std::to_string(i) + "\\";
+	for (auto i = 0; i <= camFolders.size(); ++i){
+		//auto folderNameForCam = folderName + "\\" + std::to_string(i) + "\\";
+		auto folderNameForCam = folderName + "\\" + camFolders[i] + "\\";
 		//log_error("folder name for cam = " + folderNameForCam);
 		auto allFileNames = get_all_filenames_within_folder(folderNameForCam);
 		for (auto fn : allFileNames) {
-			//
-			if (VideoFiles.register_new_name(i-1, fn)){
-				log_error("registering new name: " + fn);
+			if (VideoFiles.register_new_name(stoi(camFolders[i])-1, fn)){
+				//log_error("registering new name: " + fn);
 				log_new_file_added(i, fn, lt);
 				LastUpdateTime = lt;
 			}

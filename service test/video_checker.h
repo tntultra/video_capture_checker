@@ -43,6 +43,7 @@ namespace VIDEO_CHECKER {
 }
 
 std::string month_or_day_to_string(int val);
+VSTR get_all_folder_names_in_folder(const std::string& path);
 VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension = ".mp4");
 
 #endif //VIDEO_CHECKER_H
