@@ -120,13 +120,13 @@ int main_video_file_check_func(int argc, char *argv[])
 		LastCameraUpdateTime = lt;
 		NUM_OF_CAMS = (argc >= 4) ? std::stoi(argv[3]) : DEFAULT_NUM_OF_CAMS;
 	}
-
 	if ((LastCheckTime.wDay < lt.wDay) || (LastCheckTime.wDay == lt.wDay + 1)){
 		perform_check(LastCheckTime);
 		//reset camera files vector
 		VideoFiles.FileNameHash.clear();
 	}
 	perform_check(lt);
+
 	//check for emergency
 	auto hCamDiff = get_hour_diff(lt, LastCameraUpdateTime);
 	auto hEmailSendDiff = get_hour_diff(lt, LastEmailSentTime);
