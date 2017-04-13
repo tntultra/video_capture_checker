@@ -15,8 +15,11 @@ namespace VIDEO_CHECKER {
 	extern const std::string DEFAULT_CAPTURE_PATH;
 	extern std::string LOG_FILE_PATH;
 	extern std::string LOG_FILE_NAME;
+	extern int NUM_OF_CAMS;
 	extern const int DEFAULT_NUM_OF_CAMS;
-	extern SYSTEMTIME LastUpdateTime;
+	extern SYSTEMTIME LastCheckTime;
+	extern SYSTEMTIME LastCameraUpdateTime;
+	extern SYSTEMTIME LastEmailSentTime;
 	extern const int HOURS_TILL_EMERGENCY_CALL;
 	
 	void log_error(const std::string& errorText);
@@ -42,8 +45,8 @@ namespace VIDEO_CHECKER {
 	extern TVideoFileNames VideoFiles;
 }
 
+int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next);
 std::string month_or_day_to_string(int val);
-VSTR get_all_folder_names_in_folder(const std::string& path);
-VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension = ".mp4");
+VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension = ".mp4", bool dirs = false);
 
 #endif //VIDEO_CHECKER_H

@@ -12,8 +12,11 @@ namespace VIDEO_CHECKER {
 	std::string LOG_FILE_PATH;
 	std::string LOG_FILE_NAME;
 	const int DEFAULT_NUM_OF_CAMS = 5;
-	SYSTEMTIME LastUpdateTime;
-	const int HOURS_TILL_EMERGENCY_CALL = 4;
+	int NUM_OF_CAMS;
+	SYSTEMTIME LastCheckTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
+	SYSTEMTIME LastCameraUpdateTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
+	SYSTEMTIME LastEmailSentTime;
+	const int HOURS_TILL_EMERGENCY_CALL = 3;
 
 	TVideoFileNames VideoFiles;
 
@@ -47,26 +50,34 @@ namespace VIDEO_CHECKER {
 
 //-------------  get_all_filenames_within_folder  -----------------
 
-VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension)
+VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension, bool dirs)
 {
 	using namespace VIDEO_CHECKER;
+	static const std::string current_folder{ "." };
+	static const std::string parent_folder{ ".." };
 	VSTR names;
-	std::string format = "%s*" + extension;
-	CHAR search_path[200];
-	sprintf_s(search_path, format.c_str(), folder);
-	std::string sp{ search_path };
+	std::string sp{ folder + "\\*"};
+	if (dirs){
+		sp += extension;
+	}
 	WIN32_FIND_DATAA fd;
-	HANDLE hFind = ::FindFirstFileA(search_path, &fd);
+	HANDLE hFind = ::FindFirstFileA(sp.c_str(), &fd);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
 			// read all (real) files in current folder
 			// , delete '!' read other 2 default folder . and ..
-			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+			if (!dirs && !(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 			{
 				names.push_back(fd.cFileName);
-				//log_error(names.back());
+			}
+			else if (dirs && (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)){
+				//if not current dir or parent - add
+				std::string fn{ fd.cFileName };
+				if (fn != current_folder && fn != parent_folder){
+					names.push_back(fn);
+				}
 			}
 		} while (::FindNextFileA(hFind, &fd));
 		::FindClose(hFind);
@@ -81,19 +92,13 @@ std::string month_or_day_to_string(int val)
 	return (val > 9) ? sVal : std::string{ '0' + sVal };
 }
 
-//thats actually portable
-VSTR get_all_folder_names_in_folder(const std::string& path)
+int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next)
 {
-	VSTR folderNames;
-	DIR *dir = opendir(path.c_str());
-	struct dirent *entry = readdir(dir);
-	while (entry != NULL)
-	{
-		if (entry->d_type == DT_DIR){
-			folderNames.push_back(std::string{ entry->d_name });
-		}
-		entry = readdir(dir);
+	auto dateDiff = next.wDay - prev.wDay;
+	auto hourDiff = next.wHour - prev.wHour;
+	if (!dateDiff) {
+		return hourDiff;
+	} else {
+		return (23 - prev.wHour + next.wHour + 24*(dateDiff-1));
 	}
-	closedir(dir);
-	return folderNames;
 }
