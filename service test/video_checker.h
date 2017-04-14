@@ -21,7 +21,8 @@ namespace VIDEO_CHECKER {
 	extern SYSTEMTIME LastCameraUpdateTime;
 	extern SYSTEMTIME LastEmailSentTime;
 	extern const int HOURS_TILL_EMERGENCY_CALL;
-	
+	extern const std::string INI_FILE_NAME;
+
 	void log_error(const std::string& errorText);
 	void log_new_file_added(int camNum, const std::string& newFileName, const SYSTEMTIME& timeAdded);
 	void send_emergency_email();

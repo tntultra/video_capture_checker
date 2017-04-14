@@ -3,7 +3,10 @@
 
 #include <iostream>
 #include <fstream>
-#include <dirent.h>
+#include "win_mail.h"
+#include <memory>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 namespace VIDEO_CHECKER {
 	LPCSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
@@ -17,6 +20,7 @@ namespace VIDEO_CHECKER {
 	SYSTEMTIME LastCameraUpdateTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
 	SYSTEMTIME LastEmailSentTime;
 	const int HOURS_TILL_EMERGENCY_CALL = 3;
+	const std::string INI_FILE_NAME{ "E:\\Video\\config.ini" };
 
 	TVideoFileNames VideoFiles;
 
@@ -34,7 +38,7 @@ namespace VIDEO_CHECKER {
 	void log_new_file_added(int camNum, const std::string& newFileName, const SYSTEMTIME& t) {
 		using std::ofstream;
 		ofstream file;
-		file.open("E:\\Video\\" + LOG_FILE_NAME, ofstream::app);
+		file.open(LOG_FILE_NAME, ofstream::app);
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
 		}
@@ -45,7 +49,26 @@ namespace VIDEO_CHECKER {
 		file << "</video>\n";
 		file.close();
 	}
-	void send_emergency_email() {}
+	void send_emergency_email()
+	{
+		using namespace std;
+		//open ini file
+		//get credentials from ini file
+		boost::property_tree::ptree pt;
+		boost::property_tree::ini_parser::read_ini(INI_FILE_NAME, pt);
+		std::string name{ pt.get<std::string>("Email.LoginName") };
+		std::string password{ pt.get<std::string>("Email.LoginPassword") };
+		std::string recipName{ pt.get<std::string>("Email.RecipientName") };
+		std::string recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
+		std::string subject{ pt.get<std::string>("Email.Subject") };
+		std::string text{ pt.get<std::string>("Email.Text") };
+
+		auto msg = create_win_mail_msg(recipName, recipAddress, subject, text);
+		win_mail_login(name, password);
+		win_mail_send(msg);
+		win_mail_logoff();
+		delete[] msg.lpRecips;
+	}
 }
 
 //-------------  get_all_filenames_within_folder  -----------------

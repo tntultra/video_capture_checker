@@ -111,7 +111,7 @@ int main_video_file_check_func(int argc, char *argv[])
 	}
 	LOG_FILE_PATH = VIDEO_CAPTURE_PATH;
 
-
+	send_emergency_email();//test
 	//get current time
 	SYSTEMTIME lt;
 	GetLocalTime(&lt);
