@@ -1,7 +1,6 @@
 #include "stdafx.h"
 #include "win_mail.h"
 #include "video_checker.h"
-#include <string>
 
 static HMODULE hMapi32 = nullptr;
 static LHANDLE pSession = 0;
@@ -72,7 +71,8 @@ bool win_mail_send(MapiMessage& msg)
 
 MapiMessage create_win_mail_msg(const std::string& recipName, const std::string& recipAddr, const std::string& subject, const std::string& text)
 {
-	MapiRecipDesc recip;
+	auto recipDescs = new MapiRecipDesc[1]; 
+	auto& recip = recipDescs[0];
 	recip.ulRecipClass = MAPI_TO;
 	recip.lpszName = _strdup (recipName.c_str());
 	recip.lpszAddress = _strdup (recipAddr.c_str());
@@ -80,7 +80,7 @@ MapiMessage create_win_mail_msg(const std::string& recipName, const std::string&
 	recip.lpEntryID = nullptr;
 	recip.ulEIDSize = 0;
 
-	auto recipDescs = new MapiRecipDesc[1] {recip};
+	
 
 	MapiMessage msg;
 	msg.lpszSubject = "Video feed stopped";

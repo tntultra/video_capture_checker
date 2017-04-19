@@ -1,18 +1,15 @@
 #ifndef VIDEO_CHECKER_H
 #define VIDEO_CHECKER_H
 
-#include <string>
 #include <vector>
-#include <array>
 #include <unordered_set>
 #include <windows.h>
 
 typedef std::vector<std::string> VSTR;
 
 namespace VIDEO_CHECKER {
-	extern LPCSTR VIDEO_CAPTURE_CHECKER_TITLE;
+	extern LPSTR VIDEO_CAPTURE_CHECKER_TITLE;
 	extern std::string VIDEO_CAPTURE_PATH;
-	extern const std::string DEFAULT_CAPTURE_PATH;
 	extern std::string LOG_FILE_PATH;
 	extern std::string LOG_FILE_NAME;
 	extern int NUM_OF_CAMS;
@@ -21,7 +18,7 @@ namespace VIDEO_CHECKER {
 	extern SYSTEMTIME LastCameraUpdateTime;
 	extern SYSTEMTIME LastEmailSentTime;
 	extern const int HOURS_TILL_EMERGENCY_CALL;
-	extern const std::string INI_FILE_NAME;
+	extern std::string INI_FILE_NAME;
 
 	void log_error(const std::string& errorText);
 	void log_new_file_added(int camNum, const std::string& newFileName, const SYSTEMTIME& timeAdded);

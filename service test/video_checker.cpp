@@ -1,17 +1,14 @@
 #include "stdafx.h"
 #include "video_checker.h"
 
-#include <iostream>
 #include <fstream>
 #include "win_mail.h"
-#include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
 namespace VIDEO_CHECKER {
-	LPCSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
+	LPSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
 	std::string VIDEO_CAPTURE_PATH;
-	const std::string DEFAULT_CAPTURE_PATH = "E:\\Video\\TestFolder";
 	std::string LOG_FILE_PATH;
 	std::string LOG_FILE_NAME;
 	const int DEFAULT_NUM_OF_CAMS = 5;
@@ -20,14 +17,14 @@ namespace VIDEO_CHECKER {
 	SYSTEMTIME LastCameraUpdateTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
 	SYSTEMTIME LastEmailSentTime;
 	const int HOURS_TILL_EMERGENCY_CALL = 3;
-	const std::string INI_FILE_NAME{ "E:\\Video\\config.ini" };
+	std::string INI_FILE_NAME;
 
 	TVideoFileNames VideoFiles;
 
 	void log_error(const std::string& errorText) {
 		using std::ofstream;
 		ofstream file;
-		static const std::string log_error_fn = "E:\\Video\\log_error.txt";
+		static const std::string log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
 		file.open(log_error_fn, ofstream::app);
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
@@ -38,7 +35,7 @@ namespace VIDEO_CHECKER {
 	void log_new_file_added(int camNum, const std::string& newFileName, const SYSTEMTIME& t) {
 		using std::ofstream;
 		ofstream file;
-		file.open(LOG_FILE_NAME, ofstream::app);
+		file.open(LOG_FILE_PATH + "\\" + LOG_FILE_NAME, ofstream::app);
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
 		}
@@ -49,6 +46,7 @@ namespace VIDEO_CHECKER {
 		file << "</video>\n";
 		file.close();
 	}
+
 	void send_emergency_email()
 	{
 		using namespace std;
@@ -85,20 +83,16 @@ VSTR get_all_filenames_within_folder(const std::string& folder, const std::strin
 	}
 	WIN32_FIND_DATAA fd;
 	HANDLE hFind = ::FindFirstFileA(sp.c_str(), &fd);
-	if (hFind != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
+	if (hFind != INVALID_HANDLE_VALUE) {
+		do {
 			// read all (real) files in current folder
 			// , delete '!' read other 2 default folder . and ..
-			if (!dirs && !(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
+			if (!dirs && !(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 				names.push_back(fd.cFileName);
-			}
-			else if (dirs && (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)){
+			} else if (dirs && (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
 				//if not current dir or parent - add
-				std::string fn{ fd.cFileName };
-				if (fn != current_folder && fn != parent_folder){
+				std::string fn{fd.cFileName};
+				if (fn != current_folder && fn != parent_folder) {
 					names.push_back(fn);
 				}
 			}
