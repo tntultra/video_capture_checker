@@ -11,7 +11,7 @@ T win_mail_GetProcAddress(HMODULE library, LPCSTR funcName)
 	return reinterpret_cast<T>(::GetProcAddress(hMapi32, funcName));
 }
 
-bool win_mail_login(const std::string& name, const std::string& pwd)
+bool win_mail_login(std::string name, std::string pwd)
 {
 	hMapi32 = LoadLibraryA("Mapi32.dll");
 	if (!hMapi32) {
@@ -69,7 +69,7 @@ bool win_mail_send(MapiMessage& msg)
 	return true;
 }
 
-MapiMessage create_win_mail_msg(const std::string& recipName, const std::string& recipAddr, const std::string& subject, const std::string& text)
+MapiMessage create_win_mail_msg(std::string recipName, std::string recipAddr, std::string subject, std::string text)
 {
 	auto recipDescs = new MapiRecipDesc[1]; 
 	auto& recip = recipDescs[0];

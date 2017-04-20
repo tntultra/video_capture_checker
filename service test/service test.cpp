@@ -109,12 +109,18 @@ int main_video_file_check_func(int argc, char *argv[])
 		}
 		try {
 			boost::property_tree::ptree pt;
-			boost::property_tree::ini_parser::read_ini(INI_FILE_NAME, pt);
-			VIDEO_CAPTURE_PATH = pt.get<std::string>("Main.CameraDayFeedRootFolder");
-			LOG_FILE_PATH = pt.get<std::string>("Main.LogFolder");
-			NUM_OF_CAMS = pt.get<int>("Main.NumberOfCameras");
-		} catch (...) {
-			log_error("Не могу открыть config.ini!");
+			boost::property_tree::ini_parser::read_ini (INI_FILE_NAME, pt);
+			VIDEO_CAPTURE_PATH = pt.get<std::string> ("Main.CameraDayFeedRootFolder");
+			LOG_FILE_PATH = pt.get<std::string> ("Main.LogFolder");
+			NUM_OF_CAMS = pt.get<int> ("Main.NumberOfCameras");
+			TIME_BETWEEN_CHECKS = pt.get<int> ("Main.MinutesBetweenChecks") * 60000;
+			HOURS_TILL_EMERGENCY_CALL = pt.get<int> ("Main.HoursBetweenAlertEmails");
+		}
+		catch (const boost::property_tree::ptree_bad_path& err) {
+			log_error(std::string{ "Отсутствует строка в config.ini!\n" } +err.what());
+			return 1;
+		}	catch (...) {
+			log_error ("Не могу открыть config.ini!");
 			return 1;
 		}
 	}
@@ -140,6 +146,8 @@ int main_video_file_check_func(int argc, char *argv[])
 		LastEmailSentTime = lt;
 		send_emergency_email();
 	}
+	//wait for another refresh
+	Sleep(TIME_BETWEEN_CHECKS);
 	return 0;
 }
 
@@ -165,15 +173,13 @@ int WINAPI ServiceMain(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
 		main_video_file_check_func(argc, argv);
-		//wait for another refresh
-		Sleep(30000);
 	}
 
 	return 0;
 }
 
-//run as 
-//C:\>sm.exe create CamChecker start=auto DisplayName=CamChecker binPath="D:\Video\CamChecker.exe"
+//run cmd as  admin and type
+//./sm.exe create VideoChecker binPath= "E:\Video\VideoChecker.exe -s E:\Video\config.ini"
 
 int main(int argc, char *argv[])
 {

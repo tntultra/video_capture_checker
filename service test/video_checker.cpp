@@ -16,15 +16,16 @@ namespace VIDEO_CHECKER {
 	SYSTEMTIME LastCheckTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
 	SYSTEMTIME LastCameraUpdateTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
 	SYSTEMTIME LastEmailSentTime;
-	const int HOURS_TILL_EMERGENCY_CALL = 3;
+	int HOURS_TILL_EMERGENCY_CALL;
 	std::string INI_FILE_NAME;
+	int TIME_BETWEEN_CHECKS;
 
 	TVideoFileNames VideoFiles;
 
-	void log_error(const std::string& errorText) {
+	void log_error(std::string errorText) {
 		using std::ofstream;
 		ofstream file;
-		static const std::string log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
+		static std::string log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
 		file.open(log_error_fn, ofstream::app);
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
@@ -32,7 +33,7 @@ namespace VIDEO_CHECKER {
 		file << errorText << std::endl;
 		file.close();
 	}
-	void log_new_file_added(int camNum, const std::string& newFileName, const SYSTEMTIME& t) {
+	void log_new_file_added(int camNum, std::string newFileName, const SYSTEMTIME& t) {
 		using std::ofstream;
 		ofstream file;
 		file.open(LOG_FILE_PATH + "\\" + LOG_FILE_NAME, ofstream::app);
@@ -71,11 +72,11 @@ namespace VIDEO_CHECKER {
 
 //-------------  get_all_filenames_within_folder  -----------------
 
-VSTR get_all_filenames_within_folder(const std::string& folder, const std::string& extension, bool dirs)
+VSTR get_all_filenames_within_folder(std::string folder, std::string extension, bool dirs)
 {
 	using namespace VIDEO_CHECKER;
-	static const std::string current_folder{ "." };
-	static const std::string parent_folder{ ".." };
+	static std::string current_folder{ "." };
+	static std::string parent_folder{ ".." };
 	VSTR names;
 	std::string sp{ folder + "\\*"};
 	if (dirs){
@@ -109,6 +110,7 @@ std::string month_or_day_to_string(int val)
 	return (val > 9) ? sVal : std::string{ '0' + sVal };
 }
 
+//assumes that max day difference is 1
 int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next)
 {
 	auto dateDiff = next.wDay - prev.wDay;
@@ -116,6 +118,9 @@ int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next)
 	if (!dateDiff) {
 		return hourDiff;
 	} else {
+		if (next.wDay == 1){
+			dateDiff = 1;
+		}
 		return (23 - prev.wHour + next.wHour + 24*(dateDiff-1));
 	}
 }
