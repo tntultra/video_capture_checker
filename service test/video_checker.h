@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 #include <windows.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 typedef std::vector<std::string> VSTR;
 
@@ -14,15 +15,15 @@ namespace VIDEO_CHECKER {
 	extern std::string LOG_FILE_NAME;
 	extern int NUM_OF_CAMS;
 	extern const int DEFAULT_NUM_OF_CAMS;
-	extern SYSTEMTIME LastCheckTime;
-	extern SYSTEMTIME LastCameraUpdateTime;
-	extern SYSTEMTIME LastEmailSentTime;
-	extern int HOURS_TILL_EMERGENCY_CALL;
+	extern boost::posix_time::ptime LastCheckTime;
+	extern boost::posix_time::ptime LastCameraUpdateTime;
+	extern boost::posix_time::ptime LastEmailSentTime;
+	extern int MINUTES_TILL_EMERGENCY_CALL;
 	extern std::string INI_FILE_NAME;
 	extern int TIME_BETWEEN_CHECKS;//milliseconds
 
 	void log_error(std::string errorText);
-	void log_new_file_added(int camNum, std::string newFileName, const SYSTEMTIME& timeAdded);
+	void log_new_file_added(int camNum, std::string newFileName, const boost::posix_time::ptime& timeAdded);
 	void send_emergency_email();
 
 	struct TVideoFileNames {
@@ -44,7 +45,6 @@ namespace VIDEO_CHECKER {
 	extern TVideoFileNames VideoFiles;
 }
 
-int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next);
 std::string month_or_day_to_string(int val);
 VSTR get_all_filenames_within_folder(std::string folder, std::string extension = ".mp4", bool dirs = false);
 

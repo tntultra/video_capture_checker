@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 static
 void signal_handler(int signum)
@@ -45,17 +46,17 @@ void WINAPI ServiceCtrlHandler(DWORD request)
 	return;
 }
 
-void perform_check(const SYSTEMTIME& t)
+void perform_check(const boost::posix_time::ptime& t)
 {
 	using namespace VIDEO_CHECKER;
-	std::string year = std::to_string(t.wYear);
-	std::string month = month_or_day_to_string(t.wMonth);
-	std::string day = month_or_day_to_string(t.wDay);
+	auto year = std::to_string(t.date().year());
+	auto month = month_or_day_to_string(t.date().month());
+	auto day = month_or_day_to_string(t.date().day());
 	
 	//create log file and get folder by current time
 	char underscore{ '_' };
 	LOG_FILE_NAME = std::string{ "log" } +underscore + year + underscore + day + underscore + month + ".txt";
-	std::string folderName = VIDEO_CAPTURE_PATH + "\\" + year + "-" + day + "-" + month;
+	auto folderName = VIDEO_CAPTURE_PATH + "\\" + year + "-" + day + "-" + month;
 
 	//get all cam folders in folder
 	//check for new filenames in cam folders
@@ -114,7 +115,7 @@ int main_video_file_check_func(int argc, char *argv[])
 			LOG_FILE_PATH = pt.get<std::string> ("Main.LogFolder");
 			NUM_OF_CAMS = pt.get<int> ("Main.NumberOfCameras");
 			TIME_BETWEEN_CHECKS = pt.get<int> ("Main.MinutesBetweenChecks") * 60000;
-			HOURS_TILL_EMERGENCY_CALL = pt.get<int> ("Main.HoursBetweenAlertEmails");
+			MINUTES_TILL_EMERGENCY_CALL = pt.get<int> ("Main.MinutesBetweenAlertEmails");
 		}
 		catch (const boost::property_tree::ptree_bad_path& err) {
 			log_error(std::string{ "Отсутствует строка в config.ini!\n" } +err.what());
@@ -126,24 +127,28 @@ int main_video_file_check_func(int argc, char *argv[])
 	}
 
 	//get current time
-	SYSTEMTIME lt;
-	GetLocalTime(&lt);
-	if (!LastCheckTime.wYear){//initial check
-		LastCheckTime = lt;
-		LastCameraUpdateTime = lt;
+	using namespace boost::posix_time;
+	using namespace boost::gregorian;
+	auto localTime = second_clock::local_time();
+
+	if (LastCheckTime.is_not_a_date_time()){//initial check
+		LastCheckTime = localTime;
+		LastCameraUpdateTime = localTime;
 	}
-	if ((LastCheckTime.wDay < lt.wDay) || (LastCheckTime.wDay == lt.wDay + 1)){
+
+	auto today = localTime.date(); //Get the date part out of the time
+	auto today_start(today); //midnight 
+
+	if (LastCheckTime.date() < today_start){
 		perform_check(LastCheckTime);
 		//reset camera files vector
 		VideoFiles.FileNameHash.clear();
 	}
-	perform_check(lt);
+	perform_check(localTime);
 
 	//check for emergency
-	auto hCamDiff = get_hour_diff(lt, LastCameraUpdateTime);
-	auto hEmailSendDiff = get_hour_diff(lt, LastEmailSentTime);
-	if (hCamDiff >= HOURS_TILL_EMERGENCY_CALL && hEmailSendDiff >= HOURS_TILL_EMERGENCY_CALL) {
-		LastEmailSentTime = lt;
+	if ((LastEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
+		LastEmailSentTime = localTime;
 		send_emergency_email();
 	}
 	//wait for another refresh

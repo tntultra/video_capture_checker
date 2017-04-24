@@ -13,10 +13,10 @@ namespace VIDEO_CHECKER {
 	std::string LOG_FILE_NAME;
 	const int DEFAULT_NUM_OF_CAMS = 5;
 	int NUM_OF_CAMS;
-	SYSTEMTIME LastCheckTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
-	SYSTEMTIME LastCameraUpdateTime{ 0, 0, 0, 0, 0, 0, 0, 0 };
-	SYSTEMTIME LastEmailSentTime;
-	int HOURS_TILL_EMERGENCY_CALL;
+	boost::posix_time::ptime LastCheckTime{boost::date_time::not_a_date_time };
+	boost::posix_time::ptime LastCameraUpdateTime{ boost::date_time::not_a_date_time };
+	boost::posix_time::ptime LastEmailSentTime{ boost::date_time::not_a_date_time };
+	int MINUTES_TILL_EMERGENCY_CALL;
 	std::string INI_FILE_NAME;
 	int TIME_BETWEEN_CHECKS;
 
@@ -33,7 +33,8 @@ namespace VIDEO_CHECKER {
 		file << errorText << std::endl;
 		file.close();
 	}
-	void log_new_file_added(int camNum, std::string newFileName, const SYSTEMTIME& t) {
+
+	void log_new_file_added(int camNum, std::string newFileName, const boost::posix_time::ptime& t) {
 		using std::ofstream;
 		ofstream file;
 		file.open(LOG_FILE_PATH + "\\" + LOG_FILE_NAME, ofstream::app);
@@ -43,7 +44,7 @@ namespace VIDEO_CHECKER {
 		file << "<video>\n";
 		file << "\t<camera>" << camNum << "</camera>\n";
 		file << "\t<name>" << newFileName << "</name>\n"; 
-		file << "\t<time>" << t.wDay << '.' << t.wMonth << '.' << t.wYear << ' ' << t.wHour << ':' << t.wMinute << "</time>\n";
+		file << "\t<time>" << t << "</time>\n";
 		file << "</video>\n";
 		file.close();
 	}
@@ -108,19 +109,4 @@ std::string month_or_day_to_string(int val)
 {
 	std::string sVal = std::to_string(val);
 	return (val > 9) ? sVal : std::string{ '0' + sVal };
-}
-
-//assumes that max day difference is 1
-int get_hour_diff(SYSTEMTIME& prev, SYSTEMTIME& next)
-{
-	auto dateDiff = next.wDay - prev.wDay;
-	auto hourDiff = next.wHour - prev.wHour;
-	if (!dateDiff) {
-		return hourDiff;
-	} else {
-		if (next.wDay == 1){
-			dateDiff = 1;
-		}
-		return (23 - prev.wHour + next.wHour + 24*(dateDiff-1));
-	}
 }
