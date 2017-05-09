@@ -134,6 +134,7 @@ int main_video_file_check_func(int argc, char *argv[])
 	if (LastCheckTime.is_not_a_date_time()){//initial check
 		LastCheckTime = localTime;
 		LastCameraUpdateTime = localTime;
+		LastEmailSentTime = localTime;
 	}
 
 	auto today = localTime.date(); //Get the date part out of the time
@@ -151,8 +152,6 @@ int main_video_file_check_func(int argc, char *argv[])
 		LastEmailSentTime = localTime;
 		send_emergency_email();
 	}
-	//wait for another refresh
-	Sleep(TIME_BETWEEN_CHECKS);
 	return 0;
 }
 
@@ -178,13 +177,14 @@ int WINAPI ServiceMain(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
 		main_video_file_check_func(argc, argv);
+		Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
 	}
 
 	return 0;
 }
 
 //run cmd as  admin and type
-//./sm.exe create VideoChecker binPath= "E:\Video\VideoChecker.exe -s E:\Video\config.ini"
+//./sc.exe create VideoChecker binPath= "E:\Video\VideoChecker.exe -s E:\Video\config.ini"
 
 int main(int argc, char *argv[])
 {

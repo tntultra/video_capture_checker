@@ -5,6 +5,7 @@
 #include "win_mail.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
+#include <boost/filesystem.hpp>
 
 namespace VIDEO_CHECKER {
 	LPSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
@@ -51,6 +52,9 @@ namespace VIDEO_CHECKER {
 
 	void send_emergency_email()
 	{
+
+		bool lowOnSpace = check_hardDrive_space();
+
 		using namespace std;
 		//open ini file
 		//get credentials from ini file
@@ -62,6 +66,9 @@ namespace VIDEO_CHECKER {
 		std::string recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
 		std::string subject{ pt.get<std::string>("Email.Subject") };
 		std::string text{ pt.get<std::string>("Email.Text") };
+		if (lowOnSpace) {
+			text += "\nHard drive is low on space! Check log_error file for details.";
+		}
 
 		auto msg = create_win_mail_msg(recipName, recipAddress, subject, text);
 		win_mail_login(name, password);
@@ -104,6 +111,31 @@ VSTR get_all_filenames_within_folder(std::string folder, std::string extension, 
 	return names;
 }
 
+bool check_hardDrive_space ()
+{
+	using namespace std;
+	using namespace boost::filesystem;
+
+	auto hardDrivePath = VIDEO_CHECKER::VIDEO_CAPTURE_PATH.substr(0, 3);
+	path p{ hardDrivePath };
+	try
+	{
+		auto spaceOnHardDriveInfo = space(p);
+		boost::property_tree::ptree pt;
+		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+		auto spaceForAlertMB = stoi(pt.get<std::string>("Main.FreeSpaceAlertMegabytes"));
+		auto freeSpaceMB = spaceOnHardDriveInfo.free / (1024 * 1024);
+		if (freeSpaceMB < spaceForAlertMB) {
+			VIDEO_CHECKER::log_error("Free space is running low on " + hardDrivePath + ". Only " + std::to_string(freeSpaceMB) + "MB is available.");
+			return true;
+		}
+	}
+	catch (filesystem_error &e)
+	{
+		VIDEO_CHECKER::log_error(e.what());
+	}
+	return false;
+}
 
 std::string month_or_day_to_string(int val)
 {

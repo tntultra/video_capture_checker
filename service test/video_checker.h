@@ -45,6 +45,7 @@ namespace VIDEO_CHECKER {
 	extern TVideoFileNames VideoFiles;
 }
 
+bool check_hardDrive_space();
 std::string month_or_day_to_string(int val);
 VSTR get_all_filenames_within_folder(std::string folder, std::string extension = ".mp4", bool dirs = false);
 
