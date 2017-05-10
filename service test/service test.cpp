@@ -164,6 +164,7 @@ int main_video_file_check_func(int argc, char *argv[])
 		LastEmailSentTime = localTime;
 		send_emergency_email();
 	}
+	send_emergency_email();
 	return 0;
 }
 

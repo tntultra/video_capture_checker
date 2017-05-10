@@ -83,8 +83,8 @@ MapiMessage create_win_mail_msg(std::string recipName, std::string recipAddr, st
 	
 
 	MapiMessage msg;
-	msg.lpszSubject = "Video feed stopped";
-	msg.lpszNoteText = "ALARM!";
+	msg.lpszSubject = _strdup (subject.c_str());
+	msg.lpszNoteText = _strdup (text.c_str());
 	msg.nRecipCount = 1;
 	msg.lpRecips = recipDescs;
 	msg.ulReserved = 0;
@@ -96,4 +96,14 @@ MapiMessage create_win_mail_msg(std::string recipName, std::string recipAddr, st
 	msg.nFileCount = 0;
 	msg.lpFiles = nullptr;
 	return msg;
+}
+
+
+#include <curl/curl.h>
+
+void azaza()
+{
+	CURL *curl = curl_easy_init();
+	if (curl) printf("curl_easy_init() succeeded!\n");
+	else fprintf(stderr, "Error calling curl_easy_init().\n");
 }
