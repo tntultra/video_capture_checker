@@ -6,6 +6,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/filesystem.hpp>
 
 static
 void signal_handler(int signum)
@@ -67,6 +68,16 @@ void perform_check(const boost::posix_time::ptime& t)
 	//VideoFiles.FileNameHash.reserve(numOfCams);
 
 	if (!VideoFiles.FileNameHash.size()){
+		using namespace boost::filesystem;
+		try {
+			file_status s = status(LOG_FILE_NAME);
+			if (exists(s)) {
+				load_filenames_from_existing_logFile();
+			}
+		} catch (filesystem_error &e) {
+			log_error(e.what());
+		}
+
 		VideoFiles.FileNameHash = TVideoFileNames::HASH_TYPE{ 5, {} };
 	}
 	else if (NUM_OF_CAMS > static_cast<int>(VideoFiles.FileNameHash.size())){
@@ -78,7 +89,7 @@ void perform_check(const boost::posix_time::ptime& t)
 		auto folderNameForCam = folderName + "\\" + camFolders[i];
 		int camNum;
 		try {
-			camNum = stoi(camFolders[i]) - 1;
+			camNum = stoi(camFolders[i]);
 		} catch (const std::invalid_argument&) {
 			log_error(std::string{ "Название папки камеры не является числом! (\" " } +folderNameForCam + "\")");
 			continue;
@@ -86,8 +97,9 @@ void perform_check(const boost::posix_time::ptime& t)
 		//log_error("folder name for cam = " + folderNameForCam);
 		auto allFileNames = get_all_filenames_within_folder(folderNameForCam);
 		for (auto fn : allFileNames) {
-			if (VideoFiles.register_new_name(camNum, fn)){
-				log_new_file_added(camNum + 1, fn, t);
+			TVideoFile vFile{ camNum, fn, t };
+			if (VideoFiles.register_new_file(vFile)) {
+				log_new_file_added(vFile);
 				LastCameraUpdateTime = t;
 			}
 		}

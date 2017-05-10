@@ -6,6 +6,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/filesystem.hpp>
+#include "VideoFile.h"
 
 namespace VIDEO_CHECKER {
 	LPSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
@@ -31,22 +32,18 @@ namespace VIDEO_CHECKER {
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
 		}
-		file << errorText << std::endl;
+		file << "[ " << boost::posix_time::second_clock::local_time() << " ] " << errorText << std::endl;
 		file.close();
 	}
 
-	void log_new_file_added(int camNum, std::string newFileName, const boost::posix_time::ptime& t) {
+	void log_new_file_added(TVideoFile vFile) {
 		using std::ofstream;
 		ofstream file;
 		file.open(LOG_FILE_PATH + "\\" + LOG_FILE_NAME, ofstream::app);
 		if ((file.rdstate() & ofstream::failbit) != 0) {
 			return;
 		}
-		file << "<video>\n";
-		file << "\t<camera>" << camNum << "</camera>\n";
-		file << "\t<name>" << newFileName << "</name>\n"; 
-		file << "\t<time>" << t << "</time>\n";
-		file << "</video>\n";
+		file << vFile;
 		file.close();
 	}
 
@@ -75,6 +72,19 @@ namespace VIDEO_CHECKER {
 		win_mail_send(msg);
 		win_mail_logoff();
 		delete[] msg.lpRecips;
+	}
+
+	bool TVideoFileNames::register_new_file (TVideoFile newFile)
+	{
+		if (newFile.CameraNum >= FileNameHash.size ()) {
+			return false;
+		}
+		auto alrdyExistingName = FileNameHash[newFile.CameraNum].find (newFile.Name);
+		if (alrdyExistingName == FileNameHash[newFile.CameraNum].end ()) {
+			FileNameHash[newFile.CameraNum].insert (newFile.Name);
+			return true;
+		}
+		return false;
 	}
 }
 
@@ -109,6 +119,22 @@ VSTR get_all_filenames_within_folder(std::string folder, std::string extension, 
 		::FindClose(hFind);
 	}
 	return names;
+}
+
+bool load_filenames_from_existing_logFile()
+{
+	using std::ifstream;
+	ifstream file;
+	file.open(VIDEO_CHECKER::LOG_FILE_PATH + "\\" + VIDEO_CHECKER::LOG_FILE_NAME, ifstream::in);
+	if ((file.rdstate() & ifstream::failbit) != 0) {
+		return false;
+	}
+	while (!file.eof()) {
+		TVideoFile newVFile;
+		file >> newVFile;
+		VIDEO_CHECKER::VideoFiles.register_new_file(newVFile);
+	}
+	return false;
 }
 
 bool check_hardDrive_space ()

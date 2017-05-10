@@ -1,6 +1,8 @@
 #ifndef VIDEO_CHECKER_H
 #define VIDEO_CHECKER_H
 
+#include "VideoFile.h"
+
 #include <vector>
 #include <unordered_set>
 #include <windows.h>
@@ -23,21 +25,12 @@ namespace VIDEO_CHECKER {
 	extern int TIME_BETWEEN_CHECKS;//milliseconds
 
 	void log_error(std::string errorText);
-	void log_new_file_added(int camNum, std::string newFileName, const boost::posix_time::ptime& timeAdded);
+	void log_new_file_added(TVideoFile vFile);
 	void send_emergency_email();
 
 	struct TVideoFileNames {
-		bool register_new_name(size_t camNum, std::string fileName){
-			if (camNum >= FileNameHash.size()){		
-				return false;
-			}
-			auto alrdyExistingName = FileNameHash[camNum].find(fileName);
-			if (alrdyExistingName == FileNameHash[camNum].end()){
-				FileNameHash[camNum].insert(fileName);
-				return true;
-			}
-			return false;
-		}
+		bool register_new_file (TVideoFile newFile);
+
 		using HASH_TYPE = std::vector<std::unordered_set<std::string>>;
 		HASH_TYPE FileNameHash;
 	};
@@ -48,5 +41,6 @@ namespace VIDEO_CHECKER {
 bool check_hardDrive_space();
 std::string month_or_day_to_string(int val);
 VSTR get_all_filenames_within_folder(std::string folder, std::string extension = ".mp4", bool dirs = false);
+bool load_filenames_from_existing_logFile();
 
 #endif //VIDEO_CHECKER_H

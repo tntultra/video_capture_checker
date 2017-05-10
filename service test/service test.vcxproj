@@ -91,6 +91,7 @@
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="VideoFile.h" />
     <ClInclude Include="video_checker.h" />
     <ClInclude Include="win_mail.h" />
   </ItemGroup>
@@ -100,6 +101,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="VideoFile.cpp" />
     <ClCompile Include="video_checker.cpp" />
     <ClCompile Include="win_mail.cpp" />
   </ItemGroup>
