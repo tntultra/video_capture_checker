@@ -162,9 +162,9 @@ int main_video_file_check_func(int argc, char *argv[])
 	//check for emergency
 	if ((LastEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 		LastEmailSentTime = localTime;
-		send_emergency_email();
+		send_emergency_email_curl();
 	}
-	send_emergency_email();
+	send_emergency_email_curl();
 	return 0;
 }
 

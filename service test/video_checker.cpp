@@ -47,7 +47,7 @@ namespace VIDEO_CHECKER {
 		file.close();
 	}
 
-	void send_emergency_email()
+	void send_emergency_email_mapi()
 	{
 
 		bool lowOnSpace = check_hardDrive_space();
@@ -72,6 +72,30 @@ namespace VIDEO_CHECKER {
 		win_mail_send(msg);
 		win_mail_logoff();
 		delete[] msg.lpRecips;
+	}
+
+	void send_emergency_email_curl()
+	{
+
+		bool lowOnSpace = check_hardDrive_space();
+
+		using namespace std;
+		//open ini file
+		//get credentials from ini file
+		boost::property_tree::ptree pt;
+		boost::property_tree::ini_parser::read_ini(INI_FILE_NAME, pt);
+		std::string name{ pt.get<std::string>("Email.LoginName") };
+		std::string password{ pt.get<std::string>("Email.LoginPassword") };
+		std::string recipName{ pt.get<std::string>("Email.RecipientName") };
+		std::string recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
+		std::string subject{ pt.get<std::string>("Email.Subject") };
+		std::string text{ pt.get<std::string>("Email.Text") };
+		if (lowOnSpace) {
+			text += "\nHard drive is low on space! Check log_error file for details.";
+		}
+
+		CURL_email newEmail{ recipAddress , name , "Ivan" , subject , text };
+		newEmail.send("smtp://smtp.gmail.com:587", name, password);
 	}
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)
