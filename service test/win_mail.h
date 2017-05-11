@@ -1,9 +1,9 @@
 #ifndef WIN_MAIL_H
 #define WIN_MAIL_H
 
-#include <MAPI.h>
-#include <string>
+#include "video_checker.h"
 
+#include <MAPI.h>
 #include <curl/curl.h>
 
 struct TStringData {
@@ -26,16 +26,19 @@ public:
 		const std::string &nameFrom_,
 		const std::string &subject_,
 		const std::string &body_,
-		const std::string &cc_ = ""
+		const VSTR &cc_ = {},
+		const VSTR &bcc_ = {}
 	);
 	std::string current_time() const;
 	CURLcode send(const std::string &url, const std::string &username, const std::string &password) const;
 private:
 	// data
-	std::string To, From, CC, NameFrom, Subject, Body;
+	std::string To, From, NameFrom, Subject, Body;
+	VSTR CC, BCC;
 	// functions
 	std::string set_payload_text() const;
 	static std::string generate_message_id();
+	std::string generate_ccs() const;
 	// static functions
 	static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp);
 };

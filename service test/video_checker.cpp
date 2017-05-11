@@ -1,12 +1,14 @@
 #include "stdafx.h"
 #include "video_checker.h"
 
-#include <fstream>
+#include "VideoFile.h"
 #include "win_mail.h"
+
+#include <fstream>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/filesystem.hpp>
-#include "VideoFile.h"
+#include <boost/algorithm/string.hpp>
 
 namespace VIDEO_CHECKER {
 	LPSTR VIDEO_CAPTURE_CHECKER_TITLE = "Video capture checker";
@@ -76,26 +78,37 @@ namespace VIDEO_CHECKER {
 
 	void send_emergency_email_curl()
 	{
-
-		bool lowOnSpace = check_hardDrive_space();
-
 		using namespace std;
+		auto lowOnSpace = check_hardDrive_space();
 		//open ini file
 		//get credentials from ini file
 		boost::property_tree::ptree pt;
 		boost::property_tree::ini_parser::read_ini(INI_FILE_NAME, pt);
-		std::string name{ pt.get<std::string>("Email.LoginName") };
-		std::string password{ pt.get<std::string>("Email.LoginPassword") };
-		std::string recipName{ pt.get<std::string>("Email.RecipientName") };
-		std::string recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
-		std::string subject{ pt.get<std::string>("Email.Subject") };
-		std::string text{ pt.get<std::string>("Email.Text") };
+		auto name{ pt.get<std::string>("Email.LoginName") };
+		auto password{ pt.get<std::string>("Email.LoginPassword") };
+		auto recipName{ pt.get<std::string>("Email.RecipientName") };
+		auto recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
+		auto ccs{ pt.get<std::string>("Email.CC") };
+		auto smtp{ pt.get<std::string>("Email.SMTP") };
+
+		auto parseCcs = [&ccs] () {
+			if (!ccs[0]) {
+				return VSTR{};
+			}
+			VSTR parsedCcs;
+			boost::split(parsedCcs, ccs, boost::is_any_of(","));
+			return parsedCcs;
+		};
+
+
+		auto subject{ pt.get<std::string>("Email.Subject") };
+		auto text{ pt.get<std::string>("Email.Text") };
 		if (lowOnSpace) {
 			text += "\nHard drive is low on space! Check log_error file for details.";
 		}
 
-		CURL_email newEmail{ recipAddress , name , "Ivan" , subject , text };
-		newEmail.send("smtp://smtp.gmail.com:587", name, password);
+		CURL_email newEmail{ recipAddress , name , "Ivan" , subject , text, parseCcs() };
+		newEmail.send(smtp, name, password);
 	}
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)

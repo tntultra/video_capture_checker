@@ -6,13 +6,20 @@
 static HMODULE hMapi32 = nullptr;
 static LHANDLE pSession = 0;
 
-CURL_email::CURL_email (const std::string& to_, const std::string& from_, const std::string& nameFrom_, const std::string& subject_, const std::string& body_, const std::string& cc_) :
+CURL_email::CURL_email (const std::string& to_, 
+	const std::string& from_, 
+	const std::string& nameFrom_, 
+	const std::string& subject_, 
+	const std::string& body_, 
+	const VSTR &cc_, 
+	const VSTR &bcc_) :
 	To{ to_ },
 	From{ from_ },
 	NameFrom{ nameFrom_ },
 	Subject{ subject_},
 	Body{ body_},
-	CC{ cc_}
+	CC {cc_},
+	BCC {bcc_}
 {
 }
 
@@ -27,7 +34,7 @@ CURLcode CURL_email::send (const std::string& url, const std::string& username, 
 {
 	auto ret = CURLE_OK;
 
-	struct curl_slist *recipients = NULL;
+	struct curl_slist *recipients = nullptr;
 	auto *curl = curl_easy_init();
 
 	TStringData textdata{ set_payload_text() };
@@ -42,7 +49,9 @@ CURLcode CURL_email::send (const std::string& url, const std::string& username, 
 
 		curl_easy_setopt(curl, CURLOPT_MAIL_FROM, ("<" + From + ">").c_str());
 		recipients = curl_slist_append(recipients, ("<" + To + ">").c_str());
-		recipients = curl_slist_append(recipients, (std::string{ "<" } +"tntteferi@gmail.com" + ">").c_str());
+		for (auto& cc : CC) {
+			recipients = curl_slist_append(recipients, ("<" + cc + ">").c_str());
+		}
 
 		curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
 		curl_easy_setopt(curl, CURLOPT_READFUNCTION, payload_source);
@@ -63,14 +72,30 @@ CURLcode CURL_email::send (const std::string& url, const std::string& username, 
 	return ret;
 }
 
+std::string CURL_email::generate_ccs() const
+{
+	std::string ccs{ "Cc: <" };
+	//if (!CC.size() || !CC[0][0]) {
+	//	ccs += To;
+	//}
+	for (auto ccIt = begin(CC); ccIt != end(CC);) {
+		ccs += *ccIt;
+		if (++ccIt != end(CC)) {
+			ccs += ",";
+		}
+	}
+	ccs += ">\r\n";
+	return ccs;
+}
+
 std::string CURL_email::set_payload_text() const
 {
 	std::string payloadText = "Date: " + current_time() + "\r\n";
 	payloadText += "To: <" + To + ">\r\n";
 	payloadText += "From: <" + From + "> (" + NameFrom + ")\r\n";
-	payloadText += "Cc: <tntteferi@gmail.com> (Ivan)\r\n";
-	payloadText += "Message-ID: <dcd7cb36-11db-487a-9f3a-e652a9458efd@\r\n";
-	//payloadText += "Message-ID: <" + generate_message_id() + "@" + From.substr(From.find('@') + 1) + ">\r\n";
+	payloadText += generate_ccs ();
+	//payloadText += "Message-ID: <dcd7cb36-11db-487a-9f3a-e652a9458efd@\r\n";
+	payloadText += "Message-ID: <" + generate_message_id() + "@" + From.substr(From.find('@') + 1) + ">\r\n";
 	payloadText += "Subject: " + Subject + "\r\n";
 	payloadText += "\r\n";
 	payloadText += Body + "\r\n";
@@ -221,11 +246,4 @@ MapiMessage create_win_mail_msg(std::string recipName, std::string recipAddr, st
 	msg.nFileCount = 0;
 	msg.lpFiles = nullptr;
 	return msg;
-}
-
-void azaza()
-{
-	CURL *curl = curl_easy_init();
-	if (curl) printf("curl_easy_init() succeeded!\n");
-	else fprintf(stderr, "Error calling curl_easy_init().\n");
 }
