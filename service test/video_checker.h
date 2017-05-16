@@ -41,7 +41,7 @@ namespace VIDEO_CHECKER {
 
 bool check_hardDrive_space();
 std::string month_or_day_to_string(int val);
-VSTR get_all_filenames_within_folder(std::string folder, std::string extension = ".mp4", bool dirs = false);
+VSTR get_all_filenames_within_folder(std::string folder, std::string extension = ".*", bool dirs = false);
 bool load_filenames_from_existing_logFile();
 
 #endif //VIDEO_CHECKER_H

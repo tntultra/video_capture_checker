@@ -2,7 +2,8 @@
 #include "VideoFile.h"
 #include "video_checker.h"
 
-#include <boost/spirit/home/qi.hpp>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/optional.hpp>
 
 std::ostream & operator<<(std::ostream &os, TVideoFile vFile)
 {
@@ -16,13 +17,37 @@ std::ostream & operator<<(std::ostream &os, TVideoFile vFile)
 
 std::istream& operator>> (std::istream& is, TVideoFile& vFile)
 {
-	/*using namespace boost::spirit::qi;
-	using boost::spirit::ascii::space;
-	using boost::spirit::qi::_1;
-	using boost::phoenix::ref;
-	std::string temp, open, value, close;
-	getline(is,temp);
-	if (temp != "<video>") {
+	/*using namespace boost::spirit;
+	using std::string;
+	
+	std::istream_iterator<char> eos;              // end-of-istream iterator
+	std::istream_iterator<char> iit(is);
+
+	using TagValueNameType = std::vector<char>;
+
+	auto openingVideoTag = lit("<video>");
+	auto closingVideoTag = lit("</video>");
+	auto openingCameraTag = lit("<camera>");
+	auto closingCameraTag = lit("</camera>");
+	auto openingCameraNameTag = lit("<name>");
+	auto closingCameraNameTag = lit("</name>");
+	auto openingTimeTag = lit("<time>");
+	auto closingTimeTag = lit("</time>");
+
+	auto vf = openingVideoTag >>
+		openingCameraTag >> +qi::char_ >> closingCameraTag >>
+		openingCameraNameTag >> +qi::char_ >> closingCameraNameTag >>
+		openingTimeTag >> +qi::char_ >> closingTimeTag >>
+		closingVideoTag;
+
+	std::vector<TagValueNameType> allTagValues;
+	if (qi::phrase_parse (iit, eos, vf, allTagValues))	{
+		for (auto& value : allTagValues) {
+			
+		}
+	}*/
+
+	/*if (temp != "<video>") {
 		VIDEO_CHECKER::log_error("Cannot read video file - bad opening tag (" + temp + ")");
 		return is;
 	}

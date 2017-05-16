@@ -16,13 +16,13 @@ namespace VIDEO_CHECKER {
 	std::string LOG_FILE_PATH;
 	std::string LOG_FILE_NAME;
 	const int DEFAULT_NUM_OF_CAMS = 5;
-	int NUM_OF_CAMS;
+	int NUM_OF_CAMS = DEFAULT_NUM_OF_CAMS;
 	boost::posix_time::ptime LastCheckTime{boost::date_time::not_a_date_time };
 	boost::posix_time::ptime LastCameraUpdateTime{ boost::date_time::not_a_date_time };
 	boost::posix_time::ptime LastEmailSentTime{ boost::date_time::not_a_date_time };
-	int MINUTES_TILL_EMERGENCY_CALL;
+	int MINUTES_TILL_EMERGENCY_CALL = 180;
 	std::string INI_FILE_NAME;
-	int TIME_BETWEEN_CHECKS;
+	int TIME_BETWEEN_CHECKS = 60000;
 
 	TVideoFileNames VideoFiles;
 
@@ -113,12 +113,12 @@ namespace VIDEO_CHECKER {
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)
 	{
-		if (newFile.CameraNum >= FileNameHash.size ()) {
+		if (newFile.CameraNum > FileNameHash.size ()) {
 			return false;
 		}
-		auto alrdyExistingName = FileNameHash[newFile.CameraNum].find (newFile.Name);
-		if (alrdyExistingName == FileNameHash[newFile.CameraNum].end ()) {
-			FileNameHash[newFile.CameraNum].insert (newFile.Name);
+		auto alrdyExistingName = FileNameHash[newFile.CameraNum-1].find (newFile.Name);
+		if (alrdyExistingName == FileNameHash[newFile.CameraNum-1].end ()) {
+			FileNameHash[newFile.CameraNum-1].insert (newFile.Name);
 			return true;
 		}
 		return false;
@@ -134,7 +134,7 @@ VSTR get_all_filenames_within_folder(std::string folder, std::string extension, 
 	static std::string parent_folder{ ".." };
 	VSTR names;
 	std::string sp{ folder + "\\*"};
-	if (dirs){
+	if (!dirs){
 		sp += extension;
 	}
 	WIN32_FIND_DATAA fd;

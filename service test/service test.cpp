@@ -49,15 +49,17 @@ void WINAPI ServiceCtrlHandler(DWORD request)
 
 void perform_check(const boost::posix_time::ptime& t)
 {
+	VIDEO_CHECKER::log_error("Started new check at " + to_simple_string(t));
+
 	using namespace VIDEO_CHECKER;
 	auto year = std::to_string(t.date().year());
 	auto month = month_or_day_to_string(t.date().month());
 	auto day = month_or_day_to_string(t.date().day());
 	
 	//create log file and get folder by current time
-	char underscore{ '_' };
-	LOG_FILE_NAME = std::string{ "log" } +underscore + year + underscore + day + underscore + month + ".txt";
-	auto folderName = VIDEO_CAPTURE_PATH + "\\" + year + "-" + day + "-" + month;
+	auto underscore{ '_' };
+	LOG_FILE_NAME = std::string{ "log" } +underscore + year + underscore + month + underscore + day + ".txt";
+	auto folderName = VIDEO_CAPTURE_PATH + "\\" + year + "-" + month + "-" + day;
 
 	//get all cam folders in folder
 	//check for new filenames in cam folders
@@ -86,7 +88,7 @@ void perform_check(const boost::posix_time::ptime& t)
 
 	for (size_t i = 0; i < camFolders.size(); ++i){
 		//auto folderNameForCam = folderName + "\\" + std::to_string(i) + "\\";
-		auto folderNameForCam = folderName + "\\" + camFolders[i];
+		auto folderNameForCam = folderName + "\\" + camFolders[i] + "\\rec";
 		int camNum;
 		try {
 			camNum = stoi(camFolders[i]);
@@ -94,20 +96,25 @@ void perform_check(const boost::posix_time::ptime& t)
 			log_error(std::string{ "Название папки камеры не является числом! (\" " } +folderNameForCam + "\")");
 			continue;
 		}
-		//log_error("folder name for cam = " + folderNameForCam);
+		//log_error("camera folder name:" + folderNameForCam);
+		//log_error("camera num:" + std::to_string(camNum));
+
 		auto allFileNames = get_all_filenames_within_folder(folderNameForCam);
-		for (auto fn : allFileNames) {
+		for (auto& fn : allFileNames) {
 			TVideoFile vFile{ camNum, fn, t };
+			//log_error("file:" + fn);
 			if (VideoFiles.register_new_file(vFile)) {
+				//log_error("new file!");
 				log_new_file_added(vFile);
 				LastCameraUpdateTime = t;
 			}
 		}
 	}
 	LastCheckTime = t;
+	log_error("check performed correctly");
 }
 
-int main_video_file_check_func(int argc, char *argv[])
+int main_video_file_check_func()
 {
 	using namespace VIDEO_CHECKER;
 	signal(SIGTERM, signal_handler);
@@ -115,10 +122,11 @@ int main_video_file_check_func(int argc, char *argv[])
 	signal(SIGFPE, signal_handler);
 
 	{//load main config settings
-		if (argc >= 3) {
-			INI_FILE_NAME = argv[2];
-		} else {
-			INI_FILE_NAME = "E:\\Video\\config.ini";
+		if (!INI_FILE_NAME[0]) {
+			using namespace boost::filesystem;
+			path full_path(current_path());
+			INI_FILE_NAME = std::string{ full_path.string() } +"\\config.ini";
+			log_error("Ini file: " + INI_FILE_NAME);
 		}
 		try {
 			boost::property_tree::ptree pt;
@@ -133,7 +141,7 @@ int main_video_file_check_func(int argc, char *argv[])
 			log_error(std::string{ "Отсутствует строка в config.ini!\n" } +err.what());
 			return 1;
 		}	catch (...) {
-			log_error ("Не могу открыть config.ini!");
+			log_error ("Не могу открыть config.ini!" + INI_FILE_NAME);
 			return 1;
 		}
 	}
@@ -164,7 +172,6 @@ int main_video_file_check_func(int argc, char *argv[])
 		LastEmailSentTime = localTime;
 		send_emergency_email_curl();
 	}
-	send_emergency_email_curl();
 	return 0;
 }
 
@@ -189,7 +196,7 @@ int WINAPI ServiceMain(int argc, char *argv[])
 
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
-		main_video_file_check_func(argc, argv);
+		main_video_file_check_func();
 		Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
 	}
 
@@ -201,6 +208,9 @@ int WINAPI ServiceMain(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	if (argc >= 3) {
+		VIDEO_CHECKER::INI_FILE_NAME = argv[2];
+	}
 	if (argc >= 2 && (strcmp(argv[1], "-s") == 0 || strcmp(argv[1], "--service") == 0)) {
 		SERVICE_TABLE_ENTRYA service_table[2];
 		service_table[0].lpServiceName = VIDEO_CHECKER::VIDEO_CAPTURE_CHECKER_TITLE;
@@ -209,7 +219,7 @@ int main(int argc, char *argv[])
 		service_table[1].lpServiceProc = nullptr;
 		StartServiceCtrlDispatcherA(service_table);
 	} else {
-		return main_video_file_check_func(argc, argv);
+		return main_video_file_check_func();
 	}
 }
 
