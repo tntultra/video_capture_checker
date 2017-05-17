@@ -76,7 +76,7 @@ namespace VIDEO_CHECKER {
 		delete[] msg.lpRecips;
 	}
 
-	void send_emergency_email_curl()
+	void send_video_stop_email_curl()
 	{
 		using namespace std;
 		auto lowOnSpace = check_hardDrive_space();

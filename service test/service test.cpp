@@ -7,6 +7,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp>
+#include "win_mail.h"
 
 static
 void signal_handler(int signum)
@@ -31,6 +32,8 @@ void signal_handler(int signum)
 SERVICE_STATUS service_status;
 SERVICE_STATUS_HANDLE service_status_handle;
 
+static const DWORD SERVICE_CONTROL_SEND_TEST_MAIL = 128;
+
 void WINAPI ServiceCtrlHandler(DWORD request)
 {
 	switch (request) {
@@ -40,6 +43,10 @@ void WINAPI ServiceCtrlHandler(DWORD request)
 		service_status.dwCurrentState = SERVICE_STOPPED;
 		SetServiceStatus(service_status_handle, &service_status);
 		return;
+	case SERVICE_CONTROL_SEND_TEST_MAIL:
+		VIDEO_CHECKER::send_video_stop_email_curl();
+		return;
+
 	default:
 		break;
 	}
@@ -154,7 +161,6 @@ int main_video_file_check_func()
 	if (LastCheckTime.is_not_a_date_time()){//initial check
 		LastCheckTime = localTime;
 		LastCameraUpdateTime = localTime;
-		LastEmailSentTime = localTime;
 	}
 
 	auto today = localTime.date(); //Get the date part out of the time
@@ -168,9 +174,11 @@ int main_video_file_check_func()
 	perform_check(localTime);
 
 	//check for emergency
-	if ((LastEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
-		LastEmailSentTime = localTime;
-		send_emergency_email_curl();
+	if ((LastCameraUpdateTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
+		if (LastEmailSentTime.is_not_a_date_time() || (LastEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
+			LastEmailSentTime = localTime;
+			send_video_stop_email_curl();
+		}
 	}
 	return 0;
 }

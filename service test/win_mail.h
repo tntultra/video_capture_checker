@@ -18,6 +18,20 @@ struct TStringData {
 	explicit TStringData(std::string &m) = delete;
 };
 
+struct EMAIL_Data
+{
+	std::string To;
+	std::string From, NameFrom, Password;
+	std::string URL;
+	VSTR CC, BCC;
+};
+
+struct EMAIL_Text
+{
+	std::string Subject;
+	std::string Body;
+};
+
 class CURL_email
 {
 public:
