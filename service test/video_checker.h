@@ -19,7 +19,8 @@ namespace VIDEO_CHECKER {
 	extern const int DEFAULT_NUM_OF_CAMS;
 	extern boost::posix_time::ptime LastCheckTime;
 	extern boost::posix_time::ptime LastCameraUpdateTime;
-	extern boost::posix_time::ptime LastEmailSentTime;
+	extern boost::posix_time::ptime LastVideoStopEmailSentTime;
+	extern boost::posix_time::ptime LastLowSpaceEmailSentTime;
 	extern int MINUTES_TILL_EMERGENCY_CALL;
 	extern std::string INI_FILE_NAME;
 	extern int TIME_BETWEEN_CHECKS;//milliseconds
@@ -27,6 +28,7 @@ namespace VIDEO_CHECKER {
 	void log_error(std::string errorText);
 	void log_new_file_added(TVideoFile vFile);
 	void send_emergency_email_mapi();
+	void send_low_space_email_curl();
 	void send_video_stop_email_curl();
 
 	struct TVideoFileNames {

@@ -2,26 +2,39 @@
 #include "win_mail.h"
 #include "video_checker.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
+#include <boost/algorithm/string.hpp>
 
 static HMODULE hMapi32 = nullptr;
 static LHANDLE pSession = 0;
 
-CURL_email::CURL_email (const std::string& to_, 
-	const std::string& from_, 
-	const std::string& nameFrom_, 
-	const std::string& subject_, 
-	const std::string& body_, 
-	const VSTR &cc_, 
-	const VSTR &bcc_) :
-	To{ to_ },
-	From{ from_ },
-	NameFrom{ nameFrom_ },
-	Subject{ subject_},
-	Body{ body_},
-	CC {cc_},
-	BCC {bcc_}
+
+CURL_email CURL_email::get_email_data_from_ini()
 {
+	using namespace std;
+	//open ini file
+	//get credentials from ini file
+	boost::property_tree::ptree pt;
+	boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+	auto name{ pt.get<std::string>("Email.LoginName") };
+	auto password{ pt.get<std::string>("Email.LoginPassword") };
+	auto recipName{ pt.get<std::string>("Email.RecipientName") };
+	auto recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
+	auto ccs{ pt.get<std::string>("Email.CC") };
+	auto smtp{ pt.get<std::string>("Email.SMTP") };
+
+	auto parseCcs = [&ccs]() {
+		if (!ccs[0]) {
+			return VSTR{};
+		}
+		VSTR parsedCcs;
+		boost::split(parsedCcs, ccs, boost::is_any_of(","));
+		return parsedCcs;
+	};
+	return CURL_email{ EMAIL_Data{ recipAddress , name , recipName, password, smtp, parseCcs() } };
 }
+
 
 std::string CURL_email::current_time () const
 {
@@ -30,7 +43,7 @@ std::string CURL_email::current_time () const
 	return to_simple_string(localTime);
 }
 
-CURLcode CURL_email::send (const std::string& url, const std::string& username, const std::string& password) const
+CURLcode CURL_email::send () const
 {
 	auto ret = CURLE_OK;
 
@@ -40,16 +53,16 @@ CURLcode CURL_email::send (const std::string& url, const std::string& username, 
 	TStringData textdata{ set_payload_text() };
 
 	if (curl) {
-		curl_easy_setopt(curl, CURLOPT_USERNAME, From.c_str());
-		curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
-		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_USERNAME, Data.From.c_str());
+		curl_easy_setopt(curl, CURLOPT_PASSWORD, Data.Password.c_str());
+		curl_easy_setopt(curl, CURLOPT_URL, Data.URL.c_str());
 
 		curl_easy_setopt(curl, CURLOPT_USE_SSL, static_cast<long>(CURLUSESSL_ALL));
 		//curl_easy_setopt(curl, CURLOPT_CAINFO, "/path/to/certificate.pem");
 
-		curl_easy_setopt(curl, CURLOPT_MAIL_FROM, ("<" + From + ">").c_str());
-		recipients = curl_slist_append(recipients, ("<" + To + ">").c_str());
-		for (auto& cc : CC) {
+		curl_easy_setopt(curl, CURLOPT_MAIL_FROM, ("<" + Data.From + ">").c_str());
+		recipients = curl_slist_append(recipients, ("<" + Data.To + ">").c_str());
+		for (auto& cc : Data.CC) {
 			recipients = curl_slist_append(recipients, ("<" + cc + ">").c_str());
 		}
 
@@ -78,9 +91,9 @@ std::string CURL_email::generate_ccs() const
 	//if (!CC.size() || !CC[0][0]) {
 	//	ccs += To;
 	//}
-	for (auto ccIt = begin(CC); ccIt != end(CC);) {
+	for (auto ccIt = begin(Data.CC); ccIt != end(Data.CC);) {
 		ccs += *ccIt;
-		if (++ccIt != end(CC)) {
+		if (++ccIt != end(Data.CC)) {
 			ccs += ",";
 		}
 	}
@@ -91,14 +104,14 @@ std::string CURL_email::generate_ccs() const
 std::string CURL_email::set_payload_text() const
 {
 	std::string payloadText = "Date: " + current_time() + "\r\n";
-	payloadText += "To: <" + To + ">\r\n";
-	payloadText += "From: <" + From + "> (" + NameFrom + ")\r\n";
+	payloadText += "To: <" + Data.To + ">\r\n";
+	payloadText += "From: <" + Data.From + "> (" + Data.NameFrom + ")\r\n";
 	payloadText += generate_ccs ();
 	//payloadText += "Message-ID: <dcd7cb36-11db-487a-9f3a-e652a9458efd@\r\n";
-	payloadText += "Message-ID: <" + generate_message_id() + "@" + From.substr(From.find('@') + 1) + ">\r\n";
-	payloadText += "Subject: " + Subject + "\r\n";
+	payloadText += "Message-ID: <" + generate_message_id() + "@" + Data.From.substr(Data.From.find('@') + 1) + ">\r\n";
+	payloadText += "Subject: " + Text.Subject + "\r\n";
 	payloadText += "\r\n";
-	payloadText += Body + "\r\n";
+	payloadText += Text.Body + "\r\n";
 	payloadText += "\r\n";
 	payloadText += "\r\n"; // "It could be a lot of lines, could be MIME encoded, whatever.\r\n";
 	payloadText += "\r\n"; // "Check RFC5322.\r\n";

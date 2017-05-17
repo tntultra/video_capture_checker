@@ -19,7 +19,8 @@ namespace VIDEO_CHECKER {
 	int NUM_OF_CAMS = DEFAULT_NUM_OF_CAMS;
 	boost::posix_time::ptime LastCheckTime{boost::date_time::not_a_date_time };
 	boost::posix_time::ptime LastCameraUpdateTime{ boost::date_time::not_a_date_time };
-	boost::posix_time::ptime LastEmailSentTime{ boost::date_time::not_a_date_time };
+	boost::posix_time::ptime LastVideoStopEmailSentTime{ boost::date_time::not_a_date_time };
+	boost::posix_time::ptime LastLowSpaceEmailSentTime{ boost::date_time::not_a_date_time };
 	int MINUTES_TILL_EMERGENCY_CALL = 180;
 	std::string INI_FILE_NAME;
 	int TIME_BETWEEN_CHECKS = 60000;
@@ -76,39 +77,26 @@ namespace VIDEO_CHECKER {
 		delete[] msg.lpRecips;
 	}
 
+	void send_low_space_email_curl()
+	{
+		auto newEmail = CURL_email::get_email_data_from_ini();
+		boost::property_tree::ptree pt;
+		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+		auto subject{ pt.get<std::string>("Email.LowSpaceSubject") };
+		auto text{ pt.get<std::string>("Email.LowSpaceText") };
+		newEmail.set_text(EMAIL_Text{ subject , text });
+		newEmail.send();
+	}
+
 	void send_video_stop_email_curl()
 	{
-		using namespace std;
-		auto lowOnSpace = check_hardDrive_space();
-		//open ini file
-		//get credentials from ini file
+		auto newEmail = CURL_email::get_email_data_from_ini();
 		boost::property_tree::ptree pt;
-		boost::property_tree::ini_parser::read_ini(INI_FILE_NAME, pt);
-		auto name{ pt.get<std::string>("Email.LoginName") };
-		auto password{ pt.get<std::string>("Email.LoginPassword") };
-		auto recipName{ pt.get<std::string>("Email.RecipientName") };
-		auto recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
-		auto ccs{ pt.get<std::string>("Email.CC") };
-		auto smtp{ pt.get<std::string>("Email.SMTP") };
-
-		auto parseCcs = [&ccs] () {
-			if (!ccs[0]) {
-				return VSTR{};
-			}
-			VSTR parsedCcs;
-			boost::split(parsedCcs, ccs, boost::is_any_of(","));
-			return parsedCcs;
-		};
-
-
-		auto subject{ pt.get<std::string>("Email.Subject") };
-		auto text{ pt.get<std::string>("Email.Text") };
-		if (lowOnSpace) {
-			text += "\nHard drive is low on space! Check log_error file for details.";
-		}
-
-		CURL_email newEmail{ recipAddress , name , "Ivan" , subject , text, parseCcs() };
-		newEmail.send(smtp, name, password);
+		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+		auto subject{ pt.get<std::string>("Email.VideoFeedSubject") };
+		auto text{ pt.get<std::string>("Email.VideoFeedText") };
+		newEmail.set_text(EMAIL_Text{ subject , text });
+		newEmail.send();
 	}
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)

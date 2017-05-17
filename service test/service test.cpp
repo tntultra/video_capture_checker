@@ -175,11 +175,19 @@ int main_video_file_check_func()
 
 	//check for emergency
 	if ((LastCameraUpdateTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
-		if (LastEmailSentTime.is_not_a_date_time() || (LastEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
-			LastEmailSentTime = localTime;
+		if (LastVideoStopEmailSentTime.is_not_a_date_time() || (LastVideoStopEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
+			LastVideoStopEmailSentTime = localTime;
 			send_video_stop_email_curl();
 		}
 	}
+
+	if (check_hardDrive_space()) {
+		if (LastLowSpaceEmailSentTime.is_not_a_date_time() || (LastLowSpaceEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
+			LastLowSpaceEmailSentTime = localTime;
+			send_low_space_email_curl();
+		}
+	}
+
 	return 0;
 }
 
