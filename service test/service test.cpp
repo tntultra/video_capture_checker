@@ -172,12 +172,15 @@ int main_video_file_check_func()
 		VideoFiles.FileNameHash.clear();
 	}
 	perform_check(localTime);
-
+	
 	//check for emergency
+	auto beeped = false;
 	if ((LastCameraUpdateTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 		if (LastVideoStopEmailSentTime.is_not_a_date_time() || (LastVideoStopEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 			LastVideoStopEmailSentTime = localTime;
 			send_video_stop_email_curl();
+			Beep(750, VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
+			beeped = true;
 		}
 	}
 
@@ -187,7 +190,9 @@ int main_video_file_check_func()
 			send_low_space_email_curl();
 		}
 	}
-
+	if (!beeped) {
+		Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
+	}
 	return 0;
 }
 
@@ -213,7 +218,6 @@ int WINAPI ServiceMain(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
 		main_video_file_check_func();
-		Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
 	}
 
 	return 0;

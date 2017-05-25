@@ -53,8 +53,5 @@
     <ClCompile Include="VideoFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="xml_parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>
