@@ -27,16 +27,30 @@ namespace VIDEO_CHECKER {
 
 	TVideoFileNames VideoFiles;
 
-	void log_error(std::string errorText) {
+	std::ofstream LOG_FILE;
+
+	bool open_log_file() {
 		using std::ofstream;
-		ofstream file;
-		static std::string log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
-		file.open(log_error_fn, ofstream::app);
-		if ((file.rdstate() & ofstream::failbit) != 0) {
-			return;
+		static auto log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
+		LOG_FILE.open(log_error_fn, ofstream::app);
+		if ((LOG_FILE.rdstate() & ofstream::failbit) != 0) {
+			return false;
 		}
-		file << "[ " << boost::posix_time::second_clock::local_time() << " ] " << errorText << std::endl;
-		file.close();
+		return true;
+	}
+	void close_log_file() {
+		LOG_FILE.close();
+	}
+
+	void log_error(std::string errorText) {
+		auto opened = LOG_FILE.is_open();
+		if (!opened) {
+			open_log_file();
+		}
+		LOG_FILE << "[ " << boost::posix_time::second_clock::local_time() << " ] " << errorText << std::endl;
+		if (!opened) {
+			close_log_file();
+		}
 	}
 
 	void log_new_file_added(TVideoFile vFile) {

@@ -25,6 +25,10 @@ namespace VIDEO_CHECKER {
 	extern std::string INI_FILE_NAME;
 	extern int TIME_BETWEEN_CHECKS;//milliseconds
 
+	extern std::ofstream LOG_FILE;
+
+	bool open_log_file();
+	void close_log_file();
 	void log_error(std::string errorText);
 	void log_new_file_added(TVideoFile vFile);
 	void send_emergency_email_mapi();

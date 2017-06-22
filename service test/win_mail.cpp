@@ -45,7 +45,7 @@ std::string CURL_email::current_time () const
 
 CURLcode CURL_email::send () const
 {
-	auto ret = CURLE_OK;
+	auto ret = CURLE_FAILED_INIT;
 
 	struct curl_slist *recipients = nullptr;
 	auto *curl = curl_easy_init();
@@ -80,6 +80,8 @@ CURLcode CURL_email::send () const
 
 		curl_slist_free_all(recipients);
 		curl_easy_cleanup(curl);
+	} else {
+		VIDEO_CHECKER::log_error("error in curl_easy_init()");
 	}
 
 	return ret;
