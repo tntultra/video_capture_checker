@@ -24,6 +24,9 @@ namespace VIDEO_CHECKER {
 	extern int MINUTES_TILL_EMERGENCY_CALL;
 	extern std::string INI_FILE_NAME;
 	extern int TIME_BETWEEN_CHECKS;//milliseconds
+	
+	extern HANDLE SOUND_THREAD;
+	extern std::string SOUND_FILE_NAME;
 
 	extern std::ofstream LOG_FILE;
 

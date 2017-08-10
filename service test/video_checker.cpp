@@ -24,6 +24,9 @@ namespace VIDEO_CHECKER {
 	int MINUTES_TILL_EMERGENCY_CALL = 180;
 	std::string INI_FILE_NAME;
 	int TIME_BETWEEN_CHECKS = 60000;
+	
+	HANDLE SOUND_THREAD = NULL;
+	std::string SOUND_FILE_NAME;
 
 	TVideoFileNames VideoFiles;
 

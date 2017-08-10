@@ -9,6 +9,10 @@
 #include <boost/filesystem.hpp>
 #include "win_mail.h"
 
+#include <Mmsystem.h>
+#include <mciapi.h>
+#pragma comment(lib, "Winmm.lib")
+
 static
 void signal_handler(int signum)
 {
@@ -53,6 +57,26 @@ void WINAPI ServiceCtrlHandler(DWORD request)
 	SetServiceStatus(service_status_handle, &service_status);
 	return;
 }
+
+DWORD WINAPI MP3Proc(_In_ LPVOID lpParameter) //lpParameter can be a pointer to a structure that store data that you cannot access outside of this function. You can prepare this structure before `CreateThread` and give it's address in the `lpParameter`
+{
+	auto data = *reinterpret_cast<std::string*> (lpParameter); //If you call this structure Data, but you can call it whatever you want.
+	std::string sendStringText{ "open " + data + " type mpegvideo alias mp3" };
+	while (true)
+	{
+		auto mciRes = mciSendString(sendStringText.c_str(), NULL, 0, NULL);
+		//char buffer[256]{};
+		//mciGetErrorString(mciRes, buffer, 256);
+
+		auto res = mciSendString("play mp3 from 0 wait", NULL, 0, NULL);
+		//mciGetErrorString(res, buffer, 256);
+
+		//Do here what you want to do when the mp3 playback is over
+		SuspendThread(GetCurrentThread()); //or the handle of this thread that you keep in a static variable instead
+	}
+	return 0;
+}
+
 
 void perform_check(const boost::posix_time::ptime& t)
 {
@@ -143,6 +167,7 @@ int main_video_file_check_func()
 			NUM_OF_CAMS = pt.get<int> ("Main.NumberOfCameras");
 			TIME_BETWEEN_CHECKS = pt.get<int> ("Main.MinutesBetweenChecks") * 60000;
 			MINUTES_TILL_EMERGENCY_CALL = pt.get<int> ("Main.MinutesBetweenAlertEmails");
+			SOUND_FILE_NAME = pt.get<std::string>("Main.SoundFilePath");
 		}
 		catch (const boost::property_tree::ptree_bad_path& err) {
 			log_error(std::string{ "Отсутствует строка в config.ini!\n" } +err.what());
@@ -152,6 +177,19 @@ int main_video_file_check_func()
 			return 1;
 		}
 	}
+
+	//sound thread
+	if (SOUND_THREAD == NULL) {
+		SOUND_THREAD = CreateThread(
+			NULL,                   // default security attributes
+			0,                      // use default stack size  
+			MP3Proc,       // thread function name
+			&SOUND_FILE_NAME,          // argument to thread function 
+			CREATE_SUSPENDED,                      // use default creation flags 
+			NULL);
+	}
+
+
 	VIDEO_CHECKER::open_log_file();
 	//get current time
 	using namespace boost::posix_time;
@@ -182,6 +220,7 @@ int main_video_file_check_func()
 		if (LastVideoStopEmailSentTime.is_not_a_date_time() || (LastVideoStopEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 			LastVideoStopEmailSentTime = localTime;
 			send_video_stop_email_curl();
+			ResumeThread(SOUND_THREAD);
 		}
 	}
 
@@ -213,6 +252,7 @@ int WINAPI ServiceMain(int argc, char *argv[])
 
 	service_status.dwCurrentState = SERVICE_RUNNING;
 	SetServiceStatus(service_status_handle, &service_status);
+
 
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
