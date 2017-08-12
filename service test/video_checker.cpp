@@ -96,24 +96,28 @@ namespace VIDEO_CHECKER {
 
 	void send_low_space_email_curl()
 	{
-		auto newEmail = CURL_email::get_email_data_from_ini();
-		boost::property_tree::ptree pt;
-		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
-		auto subject{ pt.get<std::string>("Email.LowSpaceSubject") };
-		auto text{ pt.get<std::string>("Email.LowSpaceText") };
-		newEmail.set_text(EMAIL_Text{ subject , text });
-		newEmail.send();
+		CURL_email newEmail; 
+		if (CURL_email::get_email_data_from_ini(&newEmail)) {
+			boost::property_tree::ptree pt;
+			boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+			auto subject{ pt.get<std::string>("Email.LowSpaceSubject") };
+			auto text{ pt.get<std::string>("Email.LowSpaceText") };
+			newEmail.set_text(EMAIL_Text{ subject , text });
+			newEmail.send();
+		}
 	}
 
 	void send_video_stop_email_curl()
 	{
-		auto newEmail = CURL_email::get_email_data_from_ini();
-		boost::property_tree::ptree pt;
-		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
-		auto subject{ pt.get<std::string>("Email.VideoFeedSubject") };
-		auto text{ pt.get<std::string>("Email.VideoFeedText") };
-		newEmail.set_text(EMAIL_Text{ subject , text });
-		newEmail.send();
+		CURL_email newEmail;
+		if (CURL_email::get_email_data_from_ini(&newEmail)) {
+			boost::property_tree::ptree pt;
+			boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+			auto subject{ pt.get<std::string>("Email.VideoFeedSubject") };
+			auto text{ pt.get<std::string>("Email.VideoFeedText") };
+			newEmail.set_text(EMAIL_Text{ subject , text });
+			newEmail.send();
+		}
 	}
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)

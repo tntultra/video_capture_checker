@@ -11,6 +11,7 @@
 
 #include <Mmsystem.h>
 #include <mciapi.h>
+#include <thread>
 #pragma comment(lib, "Winmm.lib")
 
 static
@@ -65,14 +66,32 @@ DWORD WINAPI MP3Proc(_In_ LPVOID lpParameter) //lpParameter can be a pointer to 
 	while (true)
 	{
 		auto mciRes = mciSendString(sendStringText.c_str(), NULL, 0, NULL);
-		//char buffer[256]{};
-		//mciGetErrorString(mciRes, buffer, 256);
+		char buffer[256]{};
+		mciGetErrorString(mciRes, buffer, 256);
 
 		auto res = mciSendString("play mp3 from 0 wait", NULL, 0, NULL);
-		//mciGetErrorString(res, buffer, 256);
+		mciGetErrorString(res, buffer, 256);
 
 		//Do here what you want to do when the mp3 playback is over
 		SuspendThread(GetCurrentThread()); //or the handle of this thread that you keep in a static variable instead
+	}
+	return 0;
+}
+
+int MP3_PlayBack(const std::string& soundFileName)
+{
+	std::string sendStringText{ "open " + soundFileName + " type mpegvideo alias mp3" };
+	auto openRes = mciSendString(sendStringText.c_str(), NULL, 0, NULL);
+	if (openRes != 0) {
+		char buffer[256]{};
+		mciGetErrorString(openRes, buffer, 256);
+		VIDEO_CHECKER::log_error(std::string{ "MP3 file opening failed with following error: " } + buffer);
+	}
+	auto playRes = mciSendString("play mp3 from 0 wait", NULL, 0, NULL); 
+	if (playRes != 0) {
+		char buffer[256]{};
+		mciGetErrorString(playRes, buffer, 256);
+		VIDEO_CHECKER::log_error(std::string{ "MP3 file playback failed with following error: " } + buffer);
 	}
 	return 0;
 }
@@ -179,7 +198,7 @@ int main_video_file_check_func()
 	}
 
 	//sound thread
-	if (SOUND_THREAD == NULL) {
+	/*if (SOUND_THREAD == NULL) {
 		SOUND_THREAD = CreateThread(
 			NULL,                   // default security attributes
 			0,                      // use default stack size  
@@ -187,8 +206,7 @@ int main_video_file_check_func()
 			&SOUND_FILE_NAME,          // argument to thread function 
 			CREATE_SUSPENDED,                      // use default creation flags 
 			NULL);
-	}
-
+	}*/
 
 	VIDEO_CHECKER::open_log_file();
 	//get current time
@@ -220,7 +238,10 @@ int main_video_file_check_func()
 		if (LastVideoStopEmailSentTime.is_not_a_date_time() || (LastVideoStopEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 			LastVideoStopEmailSentTime = localTime;
 			send_video_stop_email_curl();
-			ResumeThread(SOUND_THREAD);
+			//ResumeThread(SOUND_THREAD);
+			
+			std::thread soundThread ( MP3_PlayBack, SOUND_FILE_NAME);
+			soundThread.detach();
 		}
 	}
 
@@ -257,7 +278,8 @@ int WINAPI ServiceMain(int argc, char *argv[])
 	setlocale(LC_ALL, "");
 	while (service_status.dwCurrentState == SERVICE_RUNNING) {
 		main_video_file_check_func();
-		Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
+		//Sleep(VIDEO_CHECKER::TIME_BETWEEN_CHECKS);
+		std::this_thread::sleep_for(std::chrono::milliseconds(VIDEO_CHECKER::TIME_BETWEEN_CHECKS));
 	}
 
 	return 0;
@@ -279,7 +301,10 @@ int main(int argc, char *argv[])
 		service_table[1].lpServiceProc = nullptr;
 		StartServiceCtrlDispatcherA(service_table);
 	} else {
-		return main_video_file_check_func();
+		while (1) {
+			main_video_file_check_func();
+			std::this_thread::sleep_for(std::chrono::milliseconds(VIDEO_CHECKER::TIME_BETWEEN_CHECKS));
+		}
 	}
 }
 

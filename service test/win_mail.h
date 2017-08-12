@@ -20,6 +20,7 @@ struct TStringData {
 
 struct EMAIL_Data
 {
+	EMAIL_Data() = default;
 	explicit EMAIL_Data (const std::string& to, const std::string& from, const std::string& nameFrom, const std::string& password, const std::string& url, 
 		const VSTR& cc = {}, const VSTR& bcc = {}) :
 		To (to), From (from), NameFrom(nameFrom), Password(password), URL(url), CC (cc), BCC (bcc)
@@ -41,6 +42,7 @@ struct EMAIL_Text
 class CURL_email
 {
 public:
+	CURL_email() = default;
 	explicit CURL_email(EMAIL_Data data, EMAIL_Text text = {}) :
 		Data (data), Text (text) {}
 
@@ -48,7 +50,7 @@ public:
 		Text = text;
 	}
 
-	static CURL_email get_email_data_from_ini();//factory
+	static bool get_email_data_from_ini (CURL_email* email);//factory
 
 	std::string current_time() const;
 	CURLcode send() const;

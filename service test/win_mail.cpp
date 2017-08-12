@@ -9,21 +9,27 @@
 static HMODULE hMapi32 = nullptr;
 static LHANDLE pSession = 0;
 
-
-CURL_email CURL_email::get_email_data_from_ini()
+bool CURL_email::get_email_data_from_ini (CURL_email* email)
 {
 	using namespace std;
 	//open ini file
 	//get credentials from ini file
-	boost::property_tree::ptree pt;
-	boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
-	auto name{ pt.get<std::string>("Email.LoginName") };
-	auto password{ pt.get<std::string>("Email.LoginPassword") };
-	auto recipName{ pt.get<std::string>("Email.RecipientName") };
-	auto recipAddress{ pt.get<std::string>("Email.RecipientAddress") };
-	auto ccs{ pt.get<std::string>("Email.CC") };
-	auto smtp{ pt.get<std::string>("Email.SMTP") };
-
+	std::string name, password, recipName, recipAddress, ccs, smtp;
+	try {
+		boost::property_tree::ptree pt;
+		boost::property_tree::ini_parser::read_ini(VIDEO_CHECKER::INI_FILE_NAME, pt);
+		name = pt.get<std::string>("Email.LoginName");
+		password = pt.get<std::string>("Email.LoginPassword");
+		recipName = pt.get<std::string>("Email.RecipientName");
+		recipAddress = pt.get<std::string>("Email.RecipientAddress");
+		ccs = pt.get<std::string>("Email.CC");
+		smtp = pt.get<std::string>("Email.SMTP");
+	}
+	catch (const boost::property_tree::ptree_bad_path& err) {
+		VIDEO_CHECKER::log_error(std::string{ "Отсутствует строка в config.ini!\n" } +err.what());
+		return false;
+	}
+	
 	auto parseCcs = [&ccs]() {
 		if (!ccs[0]) {
 			return VSTR{};
@@ -32,7 +38,8 @@ CURL_email CURL_email::get_email_data_from_ini()
 		boost::split(parsedCcs, ccs, boost::is_any_of(","));
 		return parsedCcs;
 	};
-	return CURL_email{ EMAIL_Data{ recipAddress , name , recipName, password, smtp, parseCcs() } };
+	*email = CURL_email{ EMAIL_Data{ recipAddress , name , recipName, password, smtp, parseCcs() } };
+	return true;
 }
 
 
