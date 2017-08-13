@@ -236,19 +236,22 @@ int main_video_file_check_func()
 	//check for emergency
 	if ((LastCameraUpdateTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
 		if (LastVideoStopEmailSentTime.is_not_a_date_time() || (LastVideoStopEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
-			LastVideoStopEmailSentTime = localTime;
-			send_video_stop_email_curl();
-			//ResumeThread(SOUND_THREAD);
-			
-			std::thread soundThread ( MP3_PlayBack, SOUND_FILE_NAME);
-			soundThread.detach();
+			if (send_video_stop_email_curl()) {
+				LastVideoStopEmailSentTime = localTime;
+			}
 		}
+		//play notification sound on each check if there were no new files for a long period of time
+		//ResumeThread(SOUND_THREAD);
+		std::thread soundThread(MP3_PlayBack, SOUND_FILE_NAME);
+		soundThread.detach();
+
 	}
 
 	if (check_hardDrive_space()) {
 		if (LastLowSpaceEmailSentTime.is_not_a_date_time() || (LastLowSpaceEmailSentTime + minutes(MINUTES_TILL_EMERGENCY_CALL)) < localTime) {
-			LastLowSpaceEmailSentTime = localTime;
-			send_low_space_email_curl();
+			if (send_low_space_email_curl()) {
+				LastLowSpaceEmailSentTime = localTime;
+			}
 		}
 	}
 	VIDEO_CHECKER::close_log_file();

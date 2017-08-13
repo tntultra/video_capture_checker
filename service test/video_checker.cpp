@@ -94,7 +94,7 @@ namespace VIDEO_CHECKER {
 		delete[] msg.lpRecips;
 	}
 
-	void send_low_space_email_curl()
+	bool send_low_space_email_curl ()
 	{
 		CURL_email newEmail; 
 		if (CURL_email::get_email_data_from_ini(&newEmail)) {
@@ -103,11 +103,13 @@ namespace VIDEO_CHECKER {
 			auto subject{ pt.get<std::string>("Email.LowSpaceSubject") };
 			auto text{ pt.get<std::string>("Email.LowSpaceText") };
 			newEmail.set_text(EMAIL_Text{ subject , text });
-			newEmail.send();
+			auto ret = newEmail.send();
+			return (ret == CURLE_OK);
 		}
+		return false;
 	}
 
-	void send_video_stop_email_curl()
+	bool send_video_stop_email_curl ()
 	{
 		CURL_email newEmail;
 		if (CURL_email::get_email_data_from_ini(&newEmail)) {
@@ -116,8 +118,10 @@ namespace VIDEO_CHECKER {
 			auto subject{ pt.get<std::string>("Email.VideoFeedSubject") };
 			auto text{ pt.get<std::string>("Email.VideoFeedText") };
 			newEmail.set_text(EMAIL_Text{ subject , text });
-			newEmail.send();
+			auto ret = newEmail.send();
+			return (ret == CURLE_OK);
 		}
+		return false;
 	}
 
 	bool TVideoFileNames::register_new_file (TVideoFile newFile)

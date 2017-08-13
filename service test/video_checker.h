@@ -35,8 +35,8 @@ namespace VIDEO_CHECKER {
 	void log_error(std::string errorText);
 	void log_new_file_added(TVideoFile vFile);
 	void send_emergency_email_mapi();
-	void send_low_space_email_curl();
-	void send_video_stop_email_curl();
+	bool send_low_space_email_curl ();
+	bool send_video_stop_email_curl ();
 
 	struct TVideoFileNames {
 		bool register_new_file (TVideoFile newFile);
