@@ -33,8 +33,10 @@ namespace VIDEO_CHECKER {
 	std::ofstream LOG_FILE;
 
 	bool open_log_file() {
+		std::cout << "opening log file\n";
 		using std::ofstream;
 		static auto log_error_fn = LOG_FILE_PATH + "\\log_error.txt";
+		std::cout << log_error_fn << "\n";
 		LOG_FILE.open(log_error_fn, ofstream::app);
 		if ((LOG_FILE.rdstate() & ofstream::failbit) != 0) {
 			return false;
@@ -42,6 +44,7 @@ namespace VIDEO_CHECKER {
 		return true;
 	}
 	void close_log_file() {
+		std::cout << "closing log file\n";
 		LOG_FILE.close();
 	}
 
@@ -50,6 +53,7 @@ namespace VIDEO_CHECKER {
 		if (!opened) {
 			open_log_file();
 		}
+		std::cout << "log error msg\n";
 		LOG_FILE << "[ " << boost::posix_time::second_clock::local_time() << " ] " << errorText << std::endl;
 		if (!opened) {
 			close_log_file();
@@ -124,14 +128,11 @@ namespace VIDEO_CHECKER {
 		return false;
 	}
 
-	bool TVideoFileNames::register_new_file (TVideoFile newFile)
+	bool TVideoFileNames::register_new_file(TVideoFile newFile)
 	{
-		if (newFile.CameraNum > FileNameHash.size ()) {
-			return false;
-		}
-		auto alrdyExistingName = FileNameHash[newFile.CameraNum-1].find (newFile.Name);
-		if (alrdyExistingName == FileNameHash[newFile.CameraNum-1].end ()) {
-			FileNameHash[newFile.CameraNum-1].insert (newFile.Name);
+		auto alrdyExistingName = FileNameHash.find(newFile.Name);
+		if (alrdyExistingName == FileNameHash.end()) {
+			FileNameHash.insert(newFile.Name);
 			return true;
 		}
 		return false;

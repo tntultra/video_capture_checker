@@ -154,3 +154,6 @@ $RECYCLE.BIN/
 
 # Mac desktop service store files
 .DS_Store
+/.vs/service test/v15
+/.vs/slnx.sqlite
+/.vs/VSWorkspaceState.json

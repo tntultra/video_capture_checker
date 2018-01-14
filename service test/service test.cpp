@@ -97,7 +97,7 @@ int MP3_PlayBack(const std::string& soundFileName)
 }
 
 
-void perform_check(const boost::posix_time::ptime& t)
+/*void perform_check(const boost::posix_time::ptime& t)
 {
 	VIDEO_CHECKER::log_error("Started new check at " + to_simple_string(t));
 
@@ -162,6 +162,32 @@ void perform_check(const boost::posix_time::ptime& t)
 	}
 	LastCheckTime = t;
 	log_error("check performed correctly");
+}*/
+
+void perform_check(const boost::posix_time::ptime& t)
+{
+	VIDEO_CHECKER::log_error("Started new check at " + to_simple_string(t));
+
+	using namespace VIDEO_CHECKER;
+	auto year = std::to_string(t.date().year());
+	auto month = month_or_day_to_string(t.date().month());
+	auto day = month_or_day_to_string(t.date().day());
+
+	//create log file and get folder by current time
+	auto underscore{ '_' };
+	LOG_FILE_NAME = std::string{ "log" } +underscore + year + underscore + month + underscore + day + ".txt";
+	auto allFileNames = get_all_filenames_within_folder(VIDEO_CAPTURE_PATH);
+	for (auto& fn : allFileNames) {
+		TVideoFile vFile{ fn, t };
+		//log_error("file:" + fn);
+		if (VideoFiles.register_new_file(vFile)) {
+			//log_error("new file!");
+			log_new_file_added(vFile);
+			LastCameraUpdateTime = t;
+		}
+	}
+	LastCheckTime = t;
+	log_error("check performed correctly");
 }
 
 int main_video_file_check_func()
@@ -183,7 +209,8 @@ int main_video_file_check_func()
 			boost::property_tree::ini_parser::read_ini (INI_FILE_NAME, pt);
 			VIDEO_CAPTURE_PATH = pt.get<std::string> ("Main.CameraDayFeedRootFolder");
 			LOG_FILE_PATH = pt.get<std::string> ("Main.LogFolder");
-			NUM_OF_CAMS = pt.get<int> ("Main.NumberOfCameras");
+			std::cout << "log folder: " << LOG_FILE_PATH << "\n";
+			//NUM_OF_CAMS = pt.get<int> ("Main.NumberOfCameras");
 			TIME_BETWEEN_CHECKS = pt.get<int> ("Main.MinutesBetweenChecks") * 60000;
 			MINUTES_TILL_EMERGENCY_CALL = pt.get<int> ("Main.MinutesBetweenAlertEmails");
 			SOUND_FILE_NAME = pt.get<std::string>("Main.SoundFilePath");

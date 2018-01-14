@@ -41,7 +41,8 @@ namespace VIDEO_CHECKER {
 	struct TVideoFileNames {
 		bool register_new_file (TVideoFile newFile);
 
-		using HASH_TYPE = std::vector<std::unordered_set<std::string>>;
+		//using HASH_TYPE = std::vector<std::unordered_set<std::string>>;
+		using HASH_TYPE = std::unordered_set<std::string>;
 		HASH_TYPE FileNameHash;
 	};
 

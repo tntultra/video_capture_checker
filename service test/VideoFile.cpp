@@ -8,7 +8,6 @@
 std::ostream & operator<<(std::ostream &os, TVideoFile vFile)
 {
 	os << "<video>\n";
-	os << "\t<camera>" << (vFile.CameraNum) << "</camera>\n";
 	os << "\t<name>" << vFile.Name << "</name>\n";
 	os << "\t<time>" << vFile.TimeAdded << "</time>\n";
 	os << "</video>\n";

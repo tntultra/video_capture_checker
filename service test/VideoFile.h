@@ -10,8 +10,8 @@
 struct TVideoFile
 {
 	TVideoFile() = default;
-	TVideoFile (int camNum, std::string newFileName, const boost::posix_time::ptime& t) :
-		CameraNum (camNum), Name (newFileName), TimeAdded (t)
+	TVideoFile (std::string newFileName, const boost::posix_time::ptime& t) :
+		Name (newFileName), TimeAdded (t)
 	{}
 
 	TVideoFile(const TVideoFile&) = default;
@@ -20,7 +20,6 @@ struct TVideoFile
 	TVideoFile& operator=(TVideoFile&&) = default;
 	~TVideoFile() = default;
 
-	size_t CameraNum;
 	std::string Name;
 	boost::posix_time::ptime TimeAdded;
 };
